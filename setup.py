@@ -1,13 +1,15 @@
-from lbryan import __version__
+from lighthouse import __version__
 from setuptools import setup, find_packages
 import os
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
-console_scripts = ['start_lbryan = lbryan.Control:main']
-requires = ['lbryum', 'fuzzywuzzy']
+console_scripts = ['start-lighthouse = lighthouse.Control:main',
+                   'silenceinthelbry = lighthouse.Control:stop',]
 
-setup(name='lbryan',
+requires = ['lbrynet', 'fuzzywuzzy']
+
+setup(name='lighthouse',
       description='Basic search engine for publications on the lbrycrd blockchain',
       version=__version__,
       maintainer='Jack Robison',

@@ -7,7 +7,7 @@ from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
 from fuzzywuzzy import process
 
-from lbryan.Metadata import METADATA_REVISIONS
+from lighthouse.Metadata import METADATA_REVISIONS
 
 
 class Metadata(dict):
@@ -121,11 +121,8 @@ class LBRYan(jsonrpc.JSONRPC):
 
     def jsonrpc_stop(self):
         print "Stopping"
-        reactor.callLater(0.0, reactor.stop)
-        return True
-
-    def jsonrpc_get(self):
-        return self.metadata_updater.metadata
+        reactor.callLater(1, reactor.stop)
+        return "Stopping"
 
 
 class LBRYindex(resource.Resource):
