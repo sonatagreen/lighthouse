@@ -9,7 +9,7 @@ def main():
     engine = LighthouseServer()
     engine.start()
     s = server.Site(engine.root)
-    reactor.listenTCP(8080, s, interface="localhost")
+    reactor.listenTCP(8080, s)
     reactor.run()
 
 

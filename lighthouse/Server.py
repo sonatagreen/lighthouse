@@ -99,6 +99,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         return r4
 
     def jsonrpc_search(self, search, search_by='title'):
+        print "Search: ", search
         if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > 1000:
             del self.fuzzy_ratio_cache[self.fuzzy_name_cache.pop()]
             self.fuzzy_name_cache.reverse()
