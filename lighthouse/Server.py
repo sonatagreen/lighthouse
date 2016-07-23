@@ -1,4 +1,6 @@
 import json
+import os
+
 from twisted.web import resource
 from twisted.internet import defer, reactor
 from twisted.internet.task import LoopingCall
@@ -6,35 +8,26 @@ from txjsonrpc.web import jsonrpc
 from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
 from fuzzywuzzy import process
-
-from lighthouse.Metadata import METADATA_REVISIONS
-
-
-class Metadata(dict):
-    def __init__(self, metadata):
-        dict.__init__(self)
-        self.metaversion = None
-        m = metadata.copy()
-        for version in METADATA_REVISIONS:
-            for k in METADATA_REVISIONS[version]['required']:
-                assert k in metadata, "Missing required metadata field: %s" % k
-                self.update({k: m.pop(k)})
-            for k in METADATA_REVISIONS[version]['optional']:
-                if k in metadata:
-                    self.update({k: m.pop(k)})
-            if not len(m):
-                self.metaversion = version
-                break
-        assert m == {}, "Unknown metadata keys: %s" % json.dumps(m.keys())
+from lighthouse.Metadata import Metadata
 
 
-class LBRYanUpdater(object):
+class MetadataUpdater(object):
     def __init__(self):
         reactor.addSystemEventTrigger('before', 'shutdown', self.stop)
         self.api = JSONRPCProxy.from_url(API_CONNECTION_STRING)
-        self.claimtrie = None
+        self.cache_file = os.path.join(os.path.expanduser("~/"), ".lighthouse_cache")
         self.claimtrie_updater = LoopingCall(self._update_claimtrie)
-        self.metadata = {}
+
+        if os.path.isfile(self.cache_file):
+            print "Loading cache"
+            f = open(self.cache_file, "r")
+            r = json.loads(f.read())
+            f.close()
+            self.claimtrie, self.metadata = r['claimtrie'], r['metadata']
+        else:
+            print "Rebuilding metadata cache"
+            self.claimtrie = None
+            self.metadata = {}
 
     def _update_claimtrie(self):
         print "Updating claimtrie"
@@ -54,7 +47,7 @@ class LBRYanUpdater(object):
         m = Metadata(metadata)
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
-        return defer.succeed(None)
+        return self._cache_metadata()
 
     def _notify_bad_metadata(self, claim):
         print "Bad metadata: ", claim['name']
@@ -67,6 +60,13 @@ class LBRYanUpdater(object):
         d.addErrback(lambda _: self._notify_bad_metadata(claim))
         return d
 
+    def _cache_metadata(self):
+        r = {'metadata': self.metadata, 'claimtrie': self.claimtrie}
+        f = open(self.cache_file, "w")
+        f.write(json.dumps(r))
+        f.close()
+        return defer.succeed(None)
+
     def start(self):
         self.claimtrie_updater.start(30)
 
@@ -75,10 +75,10 @@ class LBRYanUpdater(object):
             self.claimtrie_updater.stop()
 
 
-class LBRYan(jsonrpc.JSONRPC):
+class Lighthouse(jsonrpc.JSONRPC):
     def __init__(self):
         jsonrpc.JSONRPC.__init__(self)
-        self.metadata_updater = LBRYanUpdater()
+        self.metadata_updater = MetadataUpdater()
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
 
@@ -125,7 +125,7 @@ class LBRYan(jsonrpc.JSONRPC):
         return "Stopping"
 
 
-class LBRYindex(resource.Resource):
+class Index(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
 
@@ -141,10 +141,10 @@ class LBRYindex(resource.Resource):
         return resource.Resource.getChild(self, name, request)
 
 
-class LBRYanServer(object):
+class LighthouseServer(object):
     def _setup_server(self):
-        self.root = LBRYindex()
-        self._search_engine = LBRYan()
+        self.root = Index()
+        self._search_engine = Lighthouse()
         self.root.putChild("", self._search_engine)
         return defer.succeed(True)
 
