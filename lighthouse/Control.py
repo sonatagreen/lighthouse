@@ -5,7 +5,10 @@ from twisted.web import server
 from twisted.internet import reactor
 
 log = logging.getLogger(__name__)
-logging.getLogger(__name__).addHandler(logging.NullHandler())
+handler = logging.StreamHandler()
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+log.addHandler(handler)
 log.setLevel(logging.INFO)
 
 
