@@ -48,7 +48,7 @@ class MetadataUpdater(object):
                     r.append(claim)
                 except:
                     self.bad_uris.append(claim['txid'])
-                    log.info("Bad name: " + str(claim['name']))
+                    log.info("Bad name for claim %s" % claim['txid'])
         return r
 
     def _update_claimtrie(self):
