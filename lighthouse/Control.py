@@ -1,8 +1,12 @@
-from lighthouse.Server import LighthouseServer
+import logging
 
+from lighthouse.Server import LighthouseServer
 from twisted.web import server
 from twisted.internet import reactor
-from jsonrpc.proxy import JSONRPCProxy
+
+log = logging.getLogger(__name__)
+logging.getLogger(__name__).addHandler(logging.NullHandler())
+log.setLevel(logging.INFO)
 
 
 def main():

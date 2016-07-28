@@ -9,7 +9,6 @@ from lbrynet.core.LBRYMetadata import Metadata, verify_name_characters
 import logging
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
 
 
 class MetadataUpdater(object):
@@ -83,10 +82,10 @@ class MetadataUpdater(object):
         return defer.succeed(None)
 
     def start(self):
-        print "Starting updater"
+        log.info("Starting updater")
         self.claimtrie_updater.start(30)
 
     def stop(self):
-        print "Stopping updater"
+        log.info("Stopping updater")
         if self.claimtrie_updater.running:
             self.claimtrie_updater.stop()

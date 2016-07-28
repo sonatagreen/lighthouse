@@ -11,7 +11,6 @@ from lighthouse.Updater import MetadataUpdater
 import logging
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.INFO)
 
 
 class Lighthouse(jsonrpc.JSONRPC):
