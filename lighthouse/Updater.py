@@ -5,7 +5,7 @@ from twisted.internet import defer, reactor
 from twisted.internet.task import LoopingCall
 from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
-from lbrynet.core.LBRYMetadata import Metadata
+from lbrynet.core.LBRYMetadata import Metadata, verify_name_characters
 
 
 class MetadataUpdater(object):
@@ -26,9 +26,19 @@ class MetadataUpdater(object):
             self.claimtrie = None
             self.metadata = {}
 
+    def _filter_claimtrie(self):
+        claims = self.api.get_nametrie()
+        r = []
+        for claim in claims:
+            try:
+                r.append(verify_name_characters(claim['name']))
+            except:
+                print "Bad claim: ", claim['name']
+        return r
+
     def _update_claimtrie(self):
         print "Updating claimtrie"
-        claimtrie = self.api.get_nametrie()
+        claimtrie = self._filter_claimtrie()
         if claimtrie != self.claimtrie:
             for claim in claimtrie:
                 if claim['name'] not in self.metadata:
