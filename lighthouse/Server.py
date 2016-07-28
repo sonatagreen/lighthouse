@@ -1,8 +1,10 @@
+from txjsonrpc import jsonrpclib
+from txjsonrpc.web.jsonrpc import Handler
+from decimal import Decimal
 from twisted.web import resource
 from twisted.internet import defer, reactor
 from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
-
 from lighthouse.Updater import MetadataUpdater
 
 
@@ -13,6 +15,30 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.metadata_updater = MetadataUpdater()
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
+
+    def _cbRender(self, result, request, id, version):
+        def default_decimal(obj):
+            if isinstance(obj, Decimal):
+                return float(obj)
+
+        if isinstance(result, Handler):
+            result = result.result
+
+        if isinstance(result, dict):
+            result = result['result']
+
+        if version == jsonrpclib.VERSION_PRE1:
+            if not isinstance(result, jsonrpclib.Fault):
+                result = (result,)
+            # Convert the result (python) to JSON-RPC
+        try:
+            s = jsonrpclib.dumps(result, version=version, default=default_decimal)
+        except:
+            f = jsonrpclib.Fault(self.FAILURE, "can't serialize output")
+            s = jsonrpclib.dumps(f, version=version)
+        request.setHeader("content-length", str(len(s)))
+        request.write(s)
+        request.finish()
 
     def start(self):
         self.metadata_updater.start()
@@ -48,6 +74,8 @@ class Lighthouse(jsonrpc.JSONRPC):
             self.fuzzy_ratio_cache[search] = self._process_search(search, search_by)
             return self.fuzzy_ratio_cache[search]
 
+    def jsonrpc_get_name_trie(self):
+        return self.metadata_updater.claimtrie
 
 class Index(resource.Resource):
     def __init__(self):

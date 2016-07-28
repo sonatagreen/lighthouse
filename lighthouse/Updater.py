@@ -52,7 +52,6 @@ class MetadataUpdater(object):
             print "No new claims"
 
     def _save_metadata(self, claim, metadata):
-        print "Saving metadata for ", claim['name']
         m = Metadata(metadata)
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
