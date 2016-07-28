@@ -38,7 +38,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         args = parsed.get('params')
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
-        log.info(request.getClientIP(), functionPath, args)
+        log.info("%s %s " % (request.getClientIP(), functionPath) + str(args))
         if version:
             version = int(float(version))
         elif id and not version:

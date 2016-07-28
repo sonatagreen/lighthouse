@@ -48,7 +48,7 @@ class MetadataUpdater(object):
                     r.append(claim)
                 except:
                     self.bad_uris.append(claim['txid'])
-                    log.info("Bad name: ", claim['name'])
+                    log.info("Bad name: " + str(claim['name']))
         return r
 
     def _update_claimtrie(self):
@@ -70,7 +70,7 @@ class MetadataUpdater(object):
         return self._cache_metadata()
 
     def _notify_bad_metadata(self, claim):
-        log.info("Bad metadata: ", claim['name'])
+        log.info("Bad metadata: " + str(claim['name']))
         if claim['txid'] not in self.bad_uris:
             self.bad_uris.append(claim['txid'])
         return defer.succeed(None)
