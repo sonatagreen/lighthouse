@@ -3,9 +3,13 @@ from txjsonrpc.web.jsonrpc import Handler
 from decimal import Decimal
 from twisted.web import resource
 from twisted.internet import defer, reactor
+from twisted.web import server
 from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
+from logging import getLogger
 from lighthouse.Updater import MetadataUpdater
+
+log = getLogger(__name__)
 
 
 class Lighthouse(jsonrpc.JSONRPC):
@@ -15,6 +19,35 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.metadata_updater = MetadataUpdater()
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
+
+    def render(self, request):
+        request.content.seek(0, 0)
+        # Unmarshal the JSON-RPC data.
+        content = request.content.read()
+        parsed = jsonrpclib.loads(content)
+        functionPath = parsed.get("method")
+        args = parsed.get('params')
+        id = parsed.get('id')
+        version = parsed.get('jsonrpc')
+        log.info(request.getClientIP(), functionPath, args)
+        if version:
+            version = int(float(version))
+        elif id and not version:
+            version = jsonrpclib.VERSION_1
+        else:
+            version = jsonrpclib.VERSION_PRE1
+        # XXX this all needs to be re-worked to support logic for multiple
+        # versions...
+        try:
+            function = self._getFunction(functionPath)
+        except jsonrpclib.Fault, f:
+            self._cbRender(f, request, id, version)
+        else:
+            request.setHeader("content-type", "text/json")
+            d = defer.maybeDeferred(function, *args)
+            d.addErrback(self._ebRender, id)
+            d.addCallback(self._cbRender, request, id, version)
+        return server.NOT_DONE_YET
 
     def _cbRender(self, result, request, id, version):
         def default_decimal(obj):

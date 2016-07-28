@@ -6,6 +6,9 @@ from twisted.internet.task import LoopingCall
 from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
 from lbrynet.core.LBRYMetadata import Metadata, verify_name_characters
+from logging import getLogger
+
+log = getLogger(__name__)
 
 
 class MetadataUpdater(object):
@@ -14,15 +17,16 @@ class MetadataUpdater(object):
         self.api = JSONRPCProxy.from_url(API_CONNECTION_STRING)
         self.cache_file = os.path.join(os.path.expanduser("~/"), ".lighthouse_cache")
         self.claimtrie_updater = LoopingCall(self._update_claimtrie)
+        self.bad_uris = []
 
         if os.path.isfile(self.cache_file):
-            print "Loading cache"
+            log.info("Loading cache")
             f = open(self.cache_file, "r")
             r = json.loads(f.read())
             f.close()
             self.claimtrie, self.metadata = r['claimtrie'], r['metadata']
         else:
-            print "Rebuilding metadata cache"
+            log.info("Rebuilding metadata cache")
             self.claimtrie = None
             self.metadata = {}
 
@@ -30,15 +34,16 @@ class MetadataUpdater(object):
         claims = self.api.get_nametrie()
         r = []
         for claim in claims:
-            try:
-                verify_name_characters(claim['name'])
-                r.append(claim)
-            except:
-                print "Bad claim: ", claim['name']
+            if claim['txid'] not in self.bad_uris:
+                try:
+                    verify_name_characters(claim['name'])
+                    r.append(claim)
+                except:
+                    self.bad_uris.append(claim['txid'])
+                    log.info("Bad name: ", claim['name'])
         return r
 
     def _update_claimtrie(self):
-        print "Updating claimtrie"
         claimtrie = self._filter_claimtrie()
         if claimtrie != self.claimtrie:
             for claim in claimtrie:
@@ -46,19 +51,20 @@ class MetadataUpdater(object):
                     self._update_metadata(claim)
                 elif claim['txid'] != self.metadata[claim['name']]['txid']:
                     self._update_metadata(claim)
-            self.claimtrie = claimtrie
-            print "Update complete"
-        else:
-            print "No new claims"
 
     def _save_metadata(self, claim, metadata):
+        log.info("Updating metadata for lbry://%s" % claim['name'])
         m = Metadata(metadata)
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
+        if claim not in self.claimtrie:
+            self.claimtrie.append(claim)
         return self._cache_metadata()
 
     def _notify_bad_metadata(self, claim):
-        print "Bad metadata: ", claim['name']
+        log.info("Bad metadata: ", claim['name'])
+        if claim['txid'] not in self.bad_uris:
+            self.bad_uris.append(claim['txid'])
         return defer.succeed(None)
 
     def _update_metadata(self, claim):
