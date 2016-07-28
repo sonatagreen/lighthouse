@@ -6,9 +6,10 @@ from twisted.internet.task import LoopingCall
 from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
 from lbrynet.core.LBRYMetadata import Metadata, verify_name_characters
-from logging import getLogger
+import logging
 
-log = getLogger(__name__)
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 class MetadataUpdater(object):

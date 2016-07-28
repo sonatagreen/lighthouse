@@ -6,10 +6,12 @@ from twisted.internet import defer, reactor
 from twisted.web import server
 from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
-from logging import getLogger
 from lighthouse.Updater import MetadataUpdater
 
-log = getLogger(__name__)
+import logging
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
 
 
 class Lighthouse(jsonrpc.JSONRPC):
