@@ -36,6 +36,7 @@ class MetadataUpdater(object):
                 elif claim['txid'] != self.metadata[claim['name']]['txid']:
                     self._update_metadata(claim)
             self.claimtrie = claimtrie
+            print "Update complete"
         else:
             print "No new claims"
 
@@ -65,8 +66,10 @@ class MetadataUpdater(object):
         return defer.succeed(None)
 
     def start(self):
+        print "Starting updater"
         self.claimtrie_updater.start(30)
 
     def stop(self):
+        print "Stopping updater"
         if self.claimtrie_updater.running:
             self.claimtrie_updater.stop()
