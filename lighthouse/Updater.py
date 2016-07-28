@@ -31,7 +31,8 @@ class MetadataUpdater(object):
         r = []
         for claim in claims:
             try:
-                r.append(verify_name_characters(claim['name']))
+                verify_name_characters(claim['name'])
+                r.append(claim)
             except:
                 print "Bad claim: ", claim['name']
         return r
