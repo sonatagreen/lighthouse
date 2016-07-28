@@ -77,6 +77,7 @@ class Lighthouse(jsonrpc.JSONRPC):
     def jsonrpc_get_name_trie(self):
         return self.metadata_updater.claimtrie
 
+
 class Index(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
