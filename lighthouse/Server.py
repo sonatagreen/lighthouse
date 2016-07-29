@@ -81,10 +81,12 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.metadata_updater.stop()
 
     def _process_search(self, search, search_by):
+        log.info("Processing search: %s" % search)
         r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
         r2 = [i[0] for i in r]
-        r3 = [self.metadata_updater.metadata[m] for m in self.metadata_updater.metadata if self.metadata_updater.metadata[m][search_by] in r2]
-        r4 = [next(i for i in r3 if i[search_by] == n) for n in r2]
+        r3 = [{'name': m, 'value': self.metadata_updater.metadata[m]} for m in self.metadata_updater.metadata
+                                                                      if self.metadata_updater.metadata[m][search_by] in r2]
+        r4 = [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
         return r4
 
     def jsonrpc_search(self, search, search_by='title'):
@@ -94,19 +96,19 @@ class Lighthouse(jsonrpc.JSONRPC):
             self.fuzzy_name_cache.append(search)
             self.fuzzy_name_cache.reverse()
             self.fuzzy_ratio_cache[search] = self._process_search(search, search_by)
-            return self.fuzzy_ratio_cache[search]
         elif search in self.fuzzy_name_cache:
+            log.info("Returning cached results for: %s" % search)
             self.fuzzy_name_cache.remove(search)
             self.fuzzy_name_cache.reverse()
             self.fuzzy_name_cache.append(search)
             self.fuzzy_name_cache.reverse()
-            return self.fuzzy_ratio_cache[search]
         else:
             self.fuzzy_name_cache.reverse()
             self.fuzzy_name_cache.append(search)
             self.fuzzy_name_cache.reverse()
             self.fuzzy_ratio_cache[search] = self._process_search(search, search_by)
-            return self.fuzzy_ratio_cache[search]
+
+        return self.fuzzy_ratio_cache[search]
 
     def jsonrpc_get_name_trie(self):
         return self.metadata_updater.claimtrie
