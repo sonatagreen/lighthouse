@@ -11,6 +11,8 @@ import logging.handlers
 
 log = logging.getLogger()
 
+DEFAULT_SEARCH_KEYS = ['title', 'description', 'author']
+
 
 class Lighthouse(jsonrpc.JSONRPC):
     def __init__(self):
@@ -80,16 +82,18 @@ class Lighthouse(jsonrpc.JSONRPC):
     def shutdown(self):
         self.metadata_updater.stop()
 
-    def _process_search(self, search, search_by):
+    def _process_search(self, search, keys):
         log.info("Processing search: %s" % search)
-        r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
-        r2 = [i[0] for i in r]
-        r3 = [{'name': m, 'value': self.metadata_updater.metadata[m]} for m in self.metadata_updater.metadata
-                                                                      if self.metadata_updater.metadata[m][search_by] in r2]
-        r4 = [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
-        return r4
+        final_results = []
+        for search_by in keys:
+            r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
+            r2 = [i[0] for i in r]
+            r3 = [{'name': m, 'value': self.metadata_updater.metadata[m]} for m in self.metadata_updater.metadata
+                                                                          if self.metadata_updater.metadata[m][search_by] in r2]
+            final_results += [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
+        return final_results[:min(len(final_results), 10)]
 
-    def jsonrpc_search(self, search, search_by='title'):
+    def jsonrpc_search(self, search, search_by=DEFAULT_SEARCH_KEYS):
         if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > 1000:
             del self.fuzzy_ratio_cache[self.fuzzy_name_cache.pop()]
             self.fuzzy_name_cache.reverse()
