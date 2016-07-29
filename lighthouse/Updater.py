@@ -24,7 +24,7 @@ class MetadataUpdater(object):
             f = open(self.cache_file, "r")
             r = json.loads(f.read())
             f.close()
-            self.claimtrie, self.metadata = r['claimtrie'], r['metadata']
+            self.claimtrie, self.metadata, self.bad_uris= r['claimtrie'], r['metadata'], r['bad_uris']
         else:
             log.info("Rebuilding metadata cache")
             self.claimtrie = None
@@ -53,8 +53,8 @@ class MetadataUpdater(object):
                     self._update_metadata(claim)
 
     def _save_metadata(self, claim, metadata):
-        log.info("Updating metadata for lbry://%s" % claim['name'])
         m = Metadata(metadata)
+        log.info("Updating metadata for lbry://%s" % claim['name'])
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
         if claim not in self.claimtrie:
@@ -75,7 +75,7 @@ class MetadataUpdater(object):
         return d
 
     def _cache_metadata(self):
-        r = {'metadata': self.metadata, 'claimtrie': self.claimtrie}
+        r = {'metadata': self.metadata, 'claimtrie': self.claimtrie, 'bad_uris': self.bad_uris}
         f = open(self.cache_file, "w")
         f.write(json.dumps(r))
         f.close()
