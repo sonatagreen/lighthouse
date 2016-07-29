@@ -30,6 +30,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
         log.info("%s %s " % (request.getClientIP(), functionPath) + str(args))
+        assert functionPath == "search", "only search allowed"
         if version:
             version = int(float(version))
         elif id and not version:
