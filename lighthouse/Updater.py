@@ -17,7 +17,6 @@ class MetadataUpdater(object):
         self.api = JSONRPCProxy.from_url(API_CONNECTION_STRING)
         self.cache_file = os.path.join(os.path.expanduser("~/"), ".lighthouse_cache")
         self.claimtrie_updater = LoopingCall(self._update_claimtrie)
-        self.bad_uris = []
 
         if os.path.isfile(self.cache_file):
             log.info("Loading cache")
@@ -27,8 +26,9 @@ class MetadataUpdater(object):
             self.claimtrie, self.metadata, self.bad_uris= r['claimtrie'], r['metadata'], r['bad_uris']
         else:
             log.info("Rebuilding metadata cache")
-            self.claimtrie = None
+            self.claimtrie = []
             self.metadata = {}
+            self.bad_uris = []
 
     def _filter_claimtrie(self):
         claims = self.api.get_nametrie()
