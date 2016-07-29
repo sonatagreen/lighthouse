@@ -109,7 +109,6 @@ class Lighthouse(jsonrpc.JSONRPC):
             self.fuzzy_name_cache.reverse()
             self.fuzzy_ratio_cache[search] = self._process_search(search, search_by)
         elif search in self.fuzzy_name_cache:
-            log.info("Returning cached results for: %s" % search)
             self.fuzzy_name_cache.remove(search)
             self.fuzzy_name_cache.reverse()
             self.fuzzy_name_cache.append(search)
