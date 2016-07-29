@@ -8,17 +8,8 @@ from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
 from lighthouse.Updater import MetadataUpdater
 import logging.handlers
-import sys
-
-
-DEFAULT_FORMAT = "%(asctime)s %(levelname)-8s %(name)s:%(lineno)d: %(message)s"
-DEFAULT_FORMATTER = logging.Formatter(DEFAULT_FORMAT)
 
 log = logging.getLogger()
-handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(DEFAULT_FORMATTER)
-log.addHandler(handler)
-log.setLevel(logging.INFO)
 
 
 class Lighthouse(jsonrpc.JSONRPC):

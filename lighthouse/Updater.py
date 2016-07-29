@@ -7,16 +7,8 @@ from jsonrpc.proxy import JSONRPCProxy
 from lbrynet.conf import API_CONNECTION_STRING
 from lbrynet.core.LBRYMetadata import Metadata, verify_name_characters
 import logging.handlers
-import sys
-
-DEFAULT_FORMAT = "%(asctime)s %(levelname)-8s %(name)s:%(lineno)d: %(message)s"
-DEFAULT_FORMATTER = logging.Formatter(DEFAULT_FORMAT)
 
 log = logging.getLogger()
-handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(DEFAULT_FORMATTER)
-log.addHandler(handler)
-log.setLevel(logging.INFO)
 
 
 class MetadataUpdater(object):
