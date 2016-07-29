@@ -94,7 +94,7 @@ class Lighthouse(jsonrpc.JSONRPC):
 
         final_results = []
         for result in results:
-            if result not in final_results:
+            if result['value'] not in [v['value'] for v in final_results]:
                 final_results.append(result)
             if len(final_results) >= 10:
                 break
