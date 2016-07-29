@@ -53,11 +53,14 @@ class MetadataUpdater(object):
                     self._update_metadata(claim)
 
     def _save_metadata(self, claim, metadata):
-        m = Metadata(metadata)
+        try:
+            m = Metadata(metadata)
+        except:
+            return self._notify_bad_metadata(claim)
+        log.info("Validated lbry://%s" % claim['name'])
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
         if claim not in self.claimtrie:
-            log.info("Updating metadata for lbry://%s" % claim['name'])
             self.claimtrie.append(claim)
         return self._cache_metadata()
 
@@ -65,13 +68,13 @@ class MetadataUpdater(object):
         log.info("Bad metadata: " + str(claim['name']))
         if claim['txid'] not in self.bad_uris:
             self.bad_uris.append(claim['txid'])
-        return defer.succeed(None)
+        return self._cache_metadata()
 
     def _update_metadata(self, claim):
         d = defer.succeed(None)
         d.addCallback(lambda _: self.api.resolve_name({'name': claim['name']}))
-        d.addCallback(lambda metadata: self._save_metadata(claim, metadata))
-        d.addErrback(lambda _: self._notify_bad_metadata(claim))
+        d.addCallbacks(lambda metadata: self._save_metadata(claim, metadata),
+                       lambda _: self._notify_bad_metadata(claim))
         return d
 
     def _cache_metadata(self):
