@@ -54,10 +54,10 @@ class MetadataUpdater(object):
 
     def _save_metadata(self, claim, metadata):
         m = Metadata(metadata)
-        log.info("Updating metadata for lbry://%s" % claim['name'])
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
         if claim not in self.claimtrie:
+            log.info("Updating metadata for lbry://%s" % claim['name'])
             self.claimtrie.append(claim)
         return self._cache_metadata()
 
