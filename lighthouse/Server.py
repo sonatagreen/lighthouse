@@ -84,14 +84,22 @@ class Lighthouse(jsonrpc.JSONRPC):
 
     def _process_search(self, search, keys):
         log.info("Processing search: %s" % search)
-        final_results = []
+        results = []
         for search_by in keys:
             r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
             r2 = [i[0] for i in r]
             r3 = [{'name': m, 'value': self.metadata_updater.metadata[m]} for m in self.metadata_updater.metadata
                                                                           if self.metadata_updater.metadata[m][search_by] in r2]
-            final_results += [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
-        return final_results[:min(len(final_results), 10)]
+            results += [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
+
+        final_results = []
+        for result in results:
+            if result not in final_results:
+                final_results.append(result)
+            if len(final_results) >= 10:
+                break
+
+        return final_results
 
     def jsonrpc_search(self, search, search_by=DEFAULT_SEARCH_KEYS):
         if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > 1000:
