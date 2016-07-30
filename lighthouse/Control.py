@@ -21,7 +21,7 @@ log.setLevel(logging.INFO)
 
 def main():
     engine = LighthouseServer()
-    ecu = LighthouseControllerServer(engine)
+    ecu = LighthouseControllerServer(engine.search_engine)
     engine.start()
     s = server.Site(engine.root)
     e = server.Site(ecu.root)
