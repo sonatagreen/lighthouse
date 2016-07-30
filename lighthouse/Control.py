@@ -1,4 +1,4 @@
-from lighthouse.Server import LighthouseServer
+from lighthouse.Server import LighthouseServer, LighthouseControllerServer
 from twisted.web import server
 from twisted.internet import reactor
 import logging.handlers
@@ -21,9 +21,13 @@ log.setLevel(logging.INFO)
 
 def main():
     engine = LighthouseServer()
+    ecu = LighthouseControllerServer(engine)
     engine.start()
     s = server.Site(engine.root)
+    e = server.Site(ecu.root)
+
     reactor.listenTCP(50005, s)
+    reactor.listenTCP(50004, e, interface="localhost")
     reactor.run()
 
 

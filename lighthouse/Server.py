@@ -21,6 +21,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.metadata_updater = MetadataUpdater()
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
+        self.unique_clients = {}
 
     def render(self, request):
         request.content.seek(0, 0)
@@ -31,7 +32,8 @@ class Lighthouse(jsonrpc.JSONRPC):
         args = parsed.get('params')
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
-        log.info("%s %s " % (request.getClientIP(), functionPath) + str(args[0]))
+        self.unique_clients[request.getClientIP()] = self.unique_clients.get(request.getClientIP(), 0) + 1
+        log.info("%s %s" % (request.getClientIP(), str(args[0])))
         if not functionPath == "search":
             return server.failure
         if len(args) != 1:
@@ -128,6 +130,18 @@ class Lighthouse(jsonrpc.JSONRPC):
         return self.metadata_updater.claimtrie
 
 
+class LighthouseController(jsonrpc.JSONRPC):
+    def __init__(self, l):
+        jsonrpc.JSONRPC.__init__(self)
+        self.lighthouse = l
+
+    def jsonrpc_dump_sessions(self):
+        return self.lighthouse.unique_clients
+
+    def jsonrpc_dump_cache(self):
+        return self.lighthouse.fuzzy_name_cache
+
+
 class Index(resource.Resource):
     def __init__(self):
         resource.Resource.__init__(self)
@@ -155,3 +169,10 @@ class LighthouseServer(object):
         d = self._setup_server()
         d.addCallback(lambda _: self._search_engine.start())
         return d
+
+
+class LighthouseControllerServer(object):
+    def __init__(self, engine):
+        self.root = Index()
+        self._controller = LighthouseController(engine)
+        self.root.putChild("", self._controller)
