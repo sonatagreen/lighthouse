@@ -159,16 +159,13 @@ class Index(resource.Resource):
 
 
 class LighthouseServer(object):
-    def _setup_server(self):
+    def __init__(self):
         self.root = Index()
         self.search_engine = Lighthouse()
         self.root.putChild("", self.search_engine)
-        return defer.succeed(True)
 
     def start(self):
-        d = self._setup_server()
-        d.addCallback(lambda _: self.search_engine.start())
-        return d
+        self.search_engine.start()
 
 
 class LighthouseControllerServer(object):
