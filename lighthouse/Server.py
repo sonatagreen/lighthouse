@@ -45,7 +45,10 @@ class Lighthouse(jsonrpc.JSONRPC):
             log.info("%s %s" % (request.getClientIP(), search))
         except Exception as err:
             log.error(err.message)
-        self.unique_clients[request.getClientIP()] = self.unique_clients.get(request.getClientIP(), []).append(search)
+        if self.unique_clients.get(request.getClientIP(), None) is None:
+            self.unique_clients[request.getClientIP()] = [search]
+        else:
+            self.unique_clients[request.getClientIP()].append(search)
         if version:
             version = int(float(version))
         elif id and not version:
@@ -135,9 +138,6 @@ class Lighthouse(jsonrpc.JSONRPC):
             self.fuzzy_ratio_cache[search] = self._process_search(search, search_by)
 
         return self.fuzzy_ratio_cache[search]
-
-    def jsonrpc_get_name_trie(self):
-        return self.metadata_updater.claimtrie
 
 
 class LighthouseController(jsonrpc.JSONRPC):
