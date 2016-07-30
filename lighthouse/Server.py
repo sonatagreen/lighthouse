@@ -138,8 +138,11 @@ class LighthouseController(jsonrpc.JSONRPC):
     def jsonrpc_dump_sessions(self):
         return self.lighthouse.unique_clients
 
-    def jsonrpc_dump_cache(self):
+    def jsonrpc_dump_name_cache(self):
         return self.lighthouse.fuzzy_name_cache
+
+    def jsonrpc_dump_ratio_cache(self):
+        return self.lighthouse.fuzzy_ratio_cache
 
 
 class Index(resource.Resource):
