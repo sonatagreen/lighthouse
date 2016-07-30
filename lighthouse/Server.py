@@ -33,7 +33,10 @@ class Lighthouse(jsonrpc.JSONRPC):
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
         self.unique_clients[request.getClientIP()] = self.unique_clients.get(request.getClientIP(), 0) + 1
-        log.info("%s %s" % (request.getClientIP(), str(args[0])))
+        try:
+            log.info("%s %s" % (request.getClientIP(), str(args[0])))
+        except Exception as err:
+            log.error(err.message)
         if not functionPath == "search":
             return server.failure
         if len(args) != 1:
