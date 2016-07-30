@@ -4,8 +4,9 @@ import os
 
 base_dir = os.path.abspath(os.path.dirname(__file__))
 
-console_scripts = ['start-lighthouse = lighthouse.Control:main',]
-                   # 'silenceinthelbry = lighthouse.Control:stop',]
+console_scripts = ['start-lighthouse = lighthouse.Control:start',
+                   'silenceinthelbry = lighthouse.Control:stop',
+                   'lighthouse-cli = lighthouse.Control:cli']
 
 requires = ['lbrynet', 'fuzzywuzzy']
 

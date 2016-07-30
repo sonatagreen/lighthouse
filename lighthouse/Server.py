@@ -22,6 +22,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
         self.unique_clients = {}
+        self.running = False
 
     def render(self, request):
         request.content.seek(0, 0)
@@ -29,18 +30,22 @@ class Lighthouse(jsonrpc.JSONRPC):
         content = request.content.read()
         parsed = jsonrpclib.loads(content)
         functionPath = parsed.get("method")
-        args = parsed.get('params')
-        id = parsed.get('id')
-        version = parsed.get('jsonrpc')
-        self.unique_clients[request.getClientIP()] = self.unique_clients.get(request.getClientIP(), 0) + 1
-        try:
-            log.info("%s %s" % (request.getClientIP(), str(args[0])))
-        except Exception as err:
-            log.error(err.message)
-        if not functionPath == "search":
+        if functionPath != "search":
             return server.failure
+        args = parsed.get('params')
         if len(args) != 1:
             return server.failure
+        search = args[0]
+        if len(search) > 64:
+            log.info("Long search")
+            search = search[:64]
+        id = parsed.get('id')
+        version = parsed.get('jsonrpc')
+        try:
+            log.info("%s %s" % (request.getClientIP(), search))
+        except Exception as err:
+            log.error(err.message)
+        self.unique_clients[request.getClientIP()] = self.unique_clients.get(request.getClientIP(), []).append(search)
         if version:
             version = int(float(version))
         elif id and not version:
@@ -55,7 +60,7 @@ class Lighthouse(jsonrpc.JSONRPC):
             self._cbRender(f, request, id, version)
         else:
             request.setHeader("content-type", "text/json")
-            d = defer.maybeDeferred(function, *args)
+            d = defer.maybeDeferred(function, search)
             d.addErrback(self._ebRender, id)
             d.addCallback(self._cbRender, request, id, version)
         return server.NOT_DONE_YET
@@ -85,9 +90,11 @@ class Lighthouse(jsonrpc.JSONRPC):
         request.finish()
 
     def start(self):
+        self.running = True
         self.metadata_updater.start()
 
     def shutdown(self):
+        self.running = False
         self.metadata_updater.stop()
 
     def _process_search(self, search, keys):
@@ -146,6 +153,13 @@ class LighthouseController(jsonrpc.JSONRPC):
 
     def jsonrpc_dump_ratio_cache(self):
         return self.lighthouse.fuzzy_ratio_cache
+
+    def jsonrpc_stop(self):
+        self.lighthouse.shutdown()
+        reactor.callLater(0.0, reactor.stop)
+
+    def jsonrpc_is_running(self):
+        return self.lighthouse.running
 
 
 class Index(resource.Resource):
