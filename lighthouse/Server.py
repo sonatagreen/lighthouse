@@ -154,6 +154,9 @@ class LighthouseController(jsonrpc.JSONRPC):
     def jsonrpc_dump_ratio_cache(self):
         return self.lighthouse.fuzzy_ratio_cache
 
+    def jsonrpc_dump_metadata(self):
+        return self.lighthouse.metadata_updater.metadata
+
     def jsonrpc_stop(self):
         self.lighthouse.shutdown()
         reactor.callLater(0.0, reactor.stop)
