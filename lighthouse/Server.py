@@ -8,6 +8,7 @@ from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
 from lighthouse.Updater import MetadataUpdater
 import logging.handlers
+import time
 
 log = logging.getLogger()
 
@@ -22,6 +23,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
         self.unique_clients = {}
+        self.sd_cache = {}
         self.running = False
 
     def render(self, request):
@@ -30,25 +32,23 @@ class Lighthouse(jsonrpc.JSONRPC):
         content = request.content.read()
         parsed = jsonrpclib.loads(content)
         functionPath = parsed.get("method")
-        if functionPath != "search":
+        if functionPath not in ["search", "announce_sd", "check_available"]:
             return server.failure
         args = parsed.get('params')
         if len(args) != 1:
             return server.failure
-        search = args[0]
-        if len(search) > 64:
-            log.info("Long search")
-            search = search[:64]
+        arg = args[0]
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
         try:
-            log.info("%s %s" % (request.getClientIP(), search))
+            log.info("%s@%s: %s" % (functionPath, request.getClientIP(), arg))
         except Exception as err:
             log.error(err.message)
+
         if self.unique_clients.get(request.getClientIP(), None) is None:
-            self.unique_clients[request.getClientIP()] = [search]
+            self.unique_clients[request.getClientIP()] = [[functionPath, arg, time.time()]]
         else:
-            self.unique_clients[request.getClientIP()].append(search)
+            self.unique_clients[request.getClientIP()].append([functionPath, arg, time.time()])
         if version:
             version = int(float(version))
         elif id and not version:
@@ -63,7 +63,7 @@ class Lighthouse(jsonrpc.JSONRPC):
             self._cbRender(f, request, id, version)
         else:
             request.setHeader("content-type", "text/json")
-            d = defer.maybeDeferred(function, search)
+            d = defer.maybeDeferred(function, arg)
             d.addErrback(self._ebRender, id)
             d.addCallback(self._cbRender, request, id, version)
         return server.NOT_DONE_YET
@@ -100,14 +100,22 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.running = False
         self.metadata_updater.stop()
 
+    def _get_dict_for_return(self, name):
+        r = {
+                'name': name,
+                'value': self.metadata_updater.metadata[name],
+                'cost': self.metadata_updater.cost_and_availability[name]['cost'],
+                'available': self.metadata_updater.cost_and_availability[name]['available'],
+        }
+        return r
+
     def _process_search(self, search, keys):
         log.info("Processing search: %s" % search)
         results = []
         for search_by in keys:
             r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
             r2 = [i[0] for i in r]
-            r3 = [{'name': m, 'value': self.metadata_updater.metadata[m]} for m in self.metadata_updater.metadata
-                                                                          if self.metadata_updater.metadata[m][search_by] in r2]
+            r3 = [self._get_dict_for_return(m) for m in self.metadata_updater.metadata if self.metadata_updater.metadata[m][search_by] in r2]
             results += [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
 
         final_results = []
@@ -139,6 +147,20 @@ class Lighthouse(jsonrpc.JSONRPC):
 
         return self.fuzzy_ratio_cache[search]
 
+    def jsonrpc_announce_sd(self, sd_hash):
+        if sd_hash not in self.metadata_updater.descriptors_to_download:
+            self.metadata_updater.sd_attempts[sd_hash] = 0
+            self.metadata_updater.descriptors_to_download.append(sd_hash)
+            return "Pending"
+        else:
+            return "Already pending"
+
+    def jsonrpc_check_available(self, sd_hash):
+        if self.metadata_updater.sd_cache.get(sd_hash, False):
+            return True
+        else:
+            return False
+
 
 class LighthouseController(jsonrpc.JSONRPC):
     def __init__(self, l):
@@ -156,6 +178,9 @@ class LighthouseController(jsonrpc.JSONRPC):
 
     def jsonrpc_dump_metadata(self):
         return self.lighthouse.metadata_updater.metadata
+
+    def jsonrpc_dump_sd_blobs(self):
+        return self.lighthouse.metadata_updater.sd_cache
 
     def jsonrpc_stop(self):
         self.lighthouse.shutdown()
