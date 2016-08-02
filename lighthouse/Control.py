@@ -42,7 +42,7 @@ def start():
     s = server.Site(engine.root)
     e = server.Site(ecu.root)
 
-    reactor.listenTCP(50005, s)
+    reactor.listenTCP(50005, s, interface="localhost")
     reactor.listenTCP(50004, e, interface="localhost")
     reactor.run()
 
