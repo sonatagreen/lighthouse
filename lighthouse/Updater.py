@@ -45,9 +45,8 @@ class MetadataUpdater(object):
             self.sd_cache = {}
             self.sd_attempts = {}
             self.bad_uris = []
-            self.descriptors_to_download = []
             self.cost_and_availability = {n: {'cost': 0.0, 'available': False} for n in self.metadata}
-
+        self.descriptors_to_download = []
         for name in self.metadata:
             sd_hash = self.metadata[name]['sources']['lbry_sd_hash']
             if not self.sd_cache.get(sd_hash, False) and self.sd_attempts.get(sd_hash, 0) < MAX_SD_TRIES:
