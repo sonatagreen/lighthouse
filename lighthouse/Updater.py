@@ -124,12 +124,10 @@ class MetadataUpdater(object):
         d.addCallback(lambda _: self._cache_metadata())
 
     def _update_costs(self):
-        log.info("Updating costs")
         d = defer.DeferredList([threads.deferToThread(self._get_cost, n) for n in self.metadata])
         d.addCallback(lambda _: self._cache_metadata())
 
     def _cache_metadata(self):
-        log.info("Saving cache")
         r = {
                 'metadata': self.metadata,
                 'claimtrie': self.claimtrie,
