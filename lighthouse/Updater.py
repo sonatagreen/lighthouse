@@ -14,7 +14,7 @@ import logging.handlers
 log = logging.getLogger()
 logging.getLogger("lbrynet").setLevel(logging.WARNING)
 
-MAX_SD_TRIES = 3
+MAX_SD_TRIES = 1
 
 
 class MetadataUpdater(object):
@@ -103,7 +103,7 @@ class MetadataUpdater(object):
         return self._cache_metadata()
 
     def _notify_bad_metadata(self, claim):
-        log.info("Non conforming metadata: " + str(claim['name']))
+        log.info("lbry://%s does not conform to any specification" % str(claim['name']))
         if claim['txid'] not in self.bad_uris:
             self.bad_uris.append(claim['txid'])
         return self._cache_metadata()
