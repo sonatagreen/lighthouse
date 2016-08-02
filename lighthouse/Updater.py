@@ -12,7 +12,6 @@ from lbrynet.lbrynet_daemon.LBRYExchangeRateManager import ExchangeRateManager
 import logging.handlers
 
 log = logging.getLogger()
-logging.getLogger("lbrynet").setLevel(logging.WARNING)
 
 MAX_SD_TRIES = 1
 

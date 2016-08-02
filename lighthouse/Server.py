@@ -148,12 +148,13 @@ class Lighthouse(jsonrpc.JSONRPC):
         return self.fuzzy_ratio_cache[search]
 
     def jsonrpc_announce_sd(self, sd_hash):
-        if sd_hash not in self.metadata_updater.descriptors_to_download:
-            self.metadata_updater.sd_attempts[sd_hash] = 0
-            self.metadata_updater.descriptors_to_download.append(sd_hash)
-            return "Pending"
-        else:
-            return "Already pending"
+        sd = self.metadata_updater.sd_cache.get(sd_hash, False)
+        if sd:
+            return "Already announced"
+        self.metadata_updater.sd_attempts[sd_hash] = 0
+        self.metadata_updater.descriptors_to_download.append(sd_hash)
+        self.metadata_updater._update_descriptors()
+        return "Pending"
 
     def jsonrpc_check_available(self, sd_hash):
         if self.metadata_updater.sd_cache.get(sd_hash, False):

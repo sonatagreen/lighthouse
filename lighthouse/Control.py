@@ -18,6 +18,9 @@ file_handler.setFormatter(DEFAULT_FORMATTER)
 log.addHandler(console_handler)
 log.addHandler(file_handler)
 log.setLevel(logging.INFO)
+logging.getLogger("lbrynet").setLevel(logging.WARNING)
+logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 
 def cli():
