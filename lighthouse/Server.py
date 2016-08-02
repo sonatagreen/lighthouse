@@ -143,7 +143,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         d = self.metadata_updater._save_stream_descriptor(sd_hash)
         d.addCallback(lambda _: self.metadata_updater.sd_cache[sd_hash])
         return d
-    
+
 
 class LighthouseController(jsonrpc.JSONRPC):
     def __init__(self, l):
