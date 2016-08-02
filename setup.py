@@ -8,7 +8,7 @@ console_scripts = ['start-lighthouse = lighthouse.Control:start',
                    'silenceinthelbry = lighthouse.Control:stop',
                    'lighthouse-cli = lighthouse.Control:cli']
 
-requires = ['lbrynet', 'lbryum', 'fuzzywuzzy']
+requires = ['lbrynet', 'fuzzywuzzy']
 
 setup(name='lighthouse',
       description='Basic search engine for publications on the lbrycrd blockchain',
@@ -18,6 +18,5 @@ setup(name='lighthouse',
       install_requires=requires,
       packages=find_packages(base_dir),
       entry_points={'console_scripts': console_scripts},
-      dependency_links=['https://github.com/lbryio/lbryum/tarball/master/#egg=lbryum',
-                        'https://github.com/lbryio/lbry/tarball/master/#egg=lbrynet'],
+      dependency_links=['https://github.com/lbryio/lbryum/tarball/master/#egg=lbryum'],
       )
