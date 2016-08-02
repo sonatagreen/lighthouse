@@ -89,7 +89,8 @@ class MetadataUpdater(object):
             m = Metadata(metadata)
         except:
             return self._notify_bad_metadata(claim)
-        log.info("lbry://%s conforms to metadata version %s" % (claim['name'], m['ver']))
+        ver = m.get('ver', '0.0.1')
+        log.info("lbry://%s conforms to metadata version %s" % (claim['name'], ver))
         self.metadata[claim['name']] = m
         self.metadata[claim['name']]['txid'] = claim['txid']
         if claim not in self.claimtrie:
