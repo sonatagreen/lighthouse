@@ -23,15 +23,11 @@ class MetadataUpdater(object):
             f = open(self.cache_file, "r")
             r = json.loads(f.read())
             f.close()
-            self.claimtrie = r.get('claimtrie', [])
-            self.metadata = r.get('metadata', {})
-            self.sd_cache = r.get('sd_cache', {})
-            self.bad_uris = r.get('bad_uris', [])
+            self.claimtrie, self.metadata, self.bad_uris= r['claimtrie'], r['metadata'], r['bad_uris']
         else:
             log.info("Rebuilding metadata cache")
             self.claimtrie = []
             self.metadata = {}
-            self.sd_cache = {}
             self.bad_uris = []
 
     def _filter_claimtrie(self):
@@ -42,7 +38,7 @@ class MetadataUpdater(object):
                 try:
                     verify_name_characters(claim['name'])
                     r.append(claim)
-                except AssertionError:
+                except:
                     self.bad_uris.append(claim['txid'])
                     log.info("Bad name for claim %s" % claim['txid'])
         return r
@@ -56,13 +52,6 @@ class MetadataUpdater(object):
                 elif claim['txid'] != self.metadata[claim['name']]['txid']:
                     self._update_metadata(claim)
 
-    def _save_stream_descriptor(self, sd_hash):
-        try:
-            self.sd_cache[sd_hash] = self.api.download_descriptor({'sd_hash': sd_hash})
-        except:
-            self.sd_cache[sd_hash] = False
-        return self._cache_metadata()
-
     def _save_metadata(self, claim, metadata):
         try:
             m = Metadata(metadata)
@@ -73,7 +62,7 @@ class MetadataUpdater(object):
         self.metadata[claim['name']]['txid'] = claim['txid']
         if claim not in self.claimtrie:
             self.claimtrie.append(claim)
-        return self._save_stream_descriptor(self.metadata[claim['name']]['sources']['lbry_sd_hash'])
+        return self._cache_metadata()
 
     def _notify_bad_metadata(self, claim):
         log.info("Bad metadata: " + str(claim['name']))
@@ -89,12 +78,7 @@ class MetadataUpdater(object):
         return d
 
     def _cache_metadata(self):
-        r = {
-                'metadata': self.metadata,
-                'claimtrie': self.claimtrie,
-                'bad_uris': self.bad_uris,
-                'sd_cache': self.sd_cache
-        }
+        r = {'metadata': self.metadata, 'claimtrie': self.claimtrie, 'bad_uris': self.bad_uris}
         f = open(self.cache_file, "w")
         f.write(json.dumps(r))
         f.close()

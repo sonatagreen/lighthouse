@@ -8,7 +8,6 @@ from txjsonrpc.web import jsonrpc
 from fuzzywuzzy import process
 from lighthouse.Updater import MetadataUpdater
 import logging.handlers
-import time
 
 log = logging.getLogger()
 
@@ -23,7 +22,6 @@ class Lighthouse(jsonrpc.JSONRPC):
         self.fuzzy_name_cache = []
         self.fuzzy_ratio_cache = {}
         self.unique_clients = {}
-        self.sd_cache = {}
         self.running = False
 
     def render(self, request):
@@ -32,23 +30,25 @@ class Lighthouse(jsonrpc.JSONRPC):
         content = request.content.read()
         parsed = jsonrpclib.loads(content)
         functionPath = parsed.get("method")
-        if functionPath not in ["search", "announce_sd"]:
+        if functionPath != "search":
             return server.failure
         args = parsed.get('params')
         if len(args) != 1:
             return server.failure
-        arg = args[0]
+        search = args[0]
+        if len(search) > 64:
+            log.info("Long search")
+            search = search[:64]
         id = parsed.get('id')
         version = parsed.get('jsonrpc')
         try:
-            log.info("%s@%s: %s" % (functionPath, request.getClientIP(), arg))
+            log.info("%s %s" % (request.getClientIP(), search))
         except Exception as err:
             log.error(err.message)
-
         if self.unique_clients.get(request.getClientIP(), None) is None:
-            self.unique_clients[request.getClientIP()] = [[functionPath, arg, time.time()]]
+            self.unique_clients[request.getClientIP()] = [search]
         else:
-            self.unique_clients[request.getClientIP()].append([functionPath, arg, time.time()])
+            self.unique_clients[request.getClientIP()].append(search)
         if version:
             version = int(float(version))
         elif id and not version:
@@ -63,7 +63,7 @@ class Lighthouse(jsonrpc.JSONRPC):
             self._cbRender(f, request, id, version)
         else:
             request.setHeader("content-type", "text/json")
-            d = defer.maybeDeferred(function, arg)
+            d = defer.maybeDeferred(function, search)
             d.addErrback(self._ebRender, id)
             d.addCallback(self._cbRender, request, id, version)
         return server.NOT_DONE_YET
@@ -139,11 +139,6 @@ class Lighthouse(jsonrpc.JSONRPC):
 
         return self.fuzzy_ratio_cache[search]
 
-    def jsonrpc_announce_sd(self, sd_hash):
-        d = self.metadata_updater._save_stream_descriptor(sd_hash)
-        d.addCallback(lambda _: self.metadata_updater.sd_cache[sd_hash])
-        return d
-    
 
 class LighthouseController(jsonrpc.JSONRPC):
     def __init__(self, l):
