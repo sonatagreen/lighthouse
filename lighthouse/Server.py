@@ -62,6 +62,7 @@ class Lighthouse(jsonrpc.JSONRPC):
         except jsonrpclib.Fault, f:
             self._cbRender(f, request, id, version)
         else:
+            request.setHeader("access-control-allow-origin", "*")
             request.setHeader("content-type", "text/json")
             d = defer.maybeDeferred(function, arg)
             d.addErrback(self._ebRender, id)
