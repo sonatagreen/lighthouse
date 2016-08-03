@@ -111,13 +111,13 @@ class MetadataUpdater(object):
 
     def _update_metadata(self, claim):
         d = defer.succeed(None)
-        d.addCallback(lambda _: self.api.resolve_name({'name': claim['name']}))
+        d.addCallback(lambda _: self.api.get_claims_for_tx({'txid': claim['txid']}))
+        d.addCallback(lambda claims: json.loads(claims[0]['value']))
         d.addCallbacks(lambda metadata: self._save_metadata(claim, metadata),
                        lambda _: self._notify_bad_metadata(claim))
         return d
 
     def _update_descriptors(self):
-
         sds_to_get = []
         while self.descriptors_to_download:
             sds_to_get.append(self.descriptors_to_download.pop())
