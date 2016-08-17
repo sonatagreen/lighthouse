@@ -189,6 +189,9 @@ class LighthouseController(jsonrpc.JSONRPC):
     def jsonrpc_dump_sd_blobs(self):
         return self.lighthouse.metadata_updater.sd_cache
 
+    def jsonrpc_dump_cost_and_available(self):
+        return self.lighthouse.metadata_updater.cost_and_availability
+
     def jsonrpc_stop(self):
         self.lighthouse.shutdown()
         reactor.callLater(0.0, reactor.stop)
