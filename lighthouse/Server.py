@@ -13,6 +13,8 @@ import time
 log = logging.getLogger()
 
 DEFAULT_SEARCH_KEYS = ['title', 'description', 'author']
+MAX_RETURNED_RESULTS = 100
+SEARCH_RESULTS_CACHE_SIZE = 1000
 
 
 class Lighthouse(jsonrpc.JSONRPC):
@@ -123,13 +125,16 @@ class Lighthouse(jsonrpc.JSONRPC):
         for result in results:
             if result['value'] not in [v['value'] for v in final_results]:
                 final_results.append(result)
-            if len(final_results) >= 10:
+            if len(final_results) >= MAX_RETURNED_RESULTS:
                 break
 
         return final_results
 
     def jsonrpc_search(self, search, search_by=DEFAULT_SEARCH_KEYS):
-        if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > 1000:
+        if search in self.metadata_updater.metadata:
+            return self._get_dict_for_return(search)
+
+        if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > SEARCH_RESULTS_CACHE_SIZE:
             del self.fuzzy_ratio_cache[self.fuzzy_name_cache.pop()]
             self.fuzzy_name_cache.reverse()
             self.fuzzy_name_cache.append(search)
