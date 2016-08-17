@@ -9,6 +9,7 @@ from fuzzywuzzy import process
 from lighthouse.Updater import MetadataUpdater
 import logging.handlers
 import time
+import json
 
 log = logging.getLogger()
 
@@ -132,7 +133,7 @@ class Lighthouse(jsonrpc.JSONRPC):
 
     def jsonrpc_search(self, search, search_by=DEFAULT_SEARCH_KEYS):
         if search in self.metadata_updater.metadata:
-            return self._get_dict_for_return(search)
+            return [self._get_dict_for_return(search)]
 
         if search not in self.fuzzy_name_cache and len(self.fuzzy_name_cache) > SEARCH_RESULTS_CACHE_SIZE:
             del self.fuzzy_ratio_cache[self.fuzzy_name_cache.pop()]
@@ -188,6 +189,9 @@ class LighthouseController(jsonrpc.JSONRPC):
 
     def jsonrpc_dump_sd_blobs(self):
         return self.lighthouse.metadata_updater.sd_cache
+
+    def jsonrpc_dump_cost_and_available(self):
+        return self.lighthouse.metadata_updater.cost_and_availability
 
     def jsonrpc_stop(self):
         self.lighthouse.shutdown()
