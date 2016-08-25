@@ -117,14 +117,14 @@ class Lighthouse(jsonrpc.JSONRPC):
         log.info("Processing search: %s" % search)
         results = []
         for search_by in keys:
-            r = process.extract(search, [self.metadata_updater.metadata[m][search_by] for m in self.metadata_updater.metadata], limit=10)
+            r = process.extract(search.lower(), [self.metadata_updater.metadata[m][search_by].lower() for m in self.metadata_updater.metadata], limit=10)
             r2 = [i[0] for i in r]
-            r3 = [self._get_dict_for_return(m) for m in self.metadata_updater.metadata if self.metadata_updater.metadata[m][search_by] in r2]
-            results += [next(i for i in r3 if i['value'][search_by] == n) for n in r2]
+            r3 = [self._get_dict_for_return(m) for m in self.metadata_updater.metadata if self.metadata_updater.metadata[m][search_by].lower() in r2]
+            results += [next(i for i in r3 if i['value'][search_by].lower() == n) for n in r2]
 
         final_results = []
         for result in results:
-            if result['value'] not in [v['value'] for v in final_results]:
+            if result['value'].lower() not in [v['value'].lower() for v in final_results]:
                 final_results.append(result)
             if len(final_results) >= MAX_RETURNED_RESULTS:
                 break
